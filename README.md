@@ -7,4 +7,4 @@ and needed some exponential values.
 This script will output values to "output.txt" and generate a png file using
 gnuplot.
 
-[Curve](https://github.com/WieWaldi/exp-curve/master/curve.png)
+[Curve](https://raw.githubusercontent.com/WieWaldi/exp-curve/master/curve.png)
