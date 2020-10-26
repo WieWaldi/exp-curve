@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-#
 # +-------------------------------------------------------------------------+
 # | gencurve                                                                |
 # +-------------------------------------------------------------------------+
-# | Copyright © 2019 Waldemar Schroeer                                      |
+# | Copyright © 2020 Waldemar Schroeer                                      |
 # |                  waldemar.schroeer(at)rz-amper.de                       |
 # +-------------------------------------------------------------------------+
 
@@ -37,16 +36,6 @@ steps=${steps:-10}
 read -p "Shift PWM upward      [80]  :" pwmmin
 pwmmin=${pwmmin:-80}
 
-
-echo "==========================="
-echo "tempmin ${tempmin}"
-echo "tempmax ${tempmax}"
-echo "basis ${basis}"
-echo "steep ${steep}"
-echo "steps ${steps}"
-echo "==========================="
-
-
 # Calculate factor
 xforfactor=$(echo "(${tempmax}-${tempmin})*${steep}" | bc -l)
 yforfactor=$(echo "e(l(${basis})*${xforfactor})-1+${pwmmin}" | bc -l)
@@ -60,20 +49,11 @@ while [[ ${counter} -lt ${counterend} ]]; do
     functionytemp=$(echo "e(l(${basis})*${functionx})-1+${pwmmin}" | bc -l)
     functionyfactor=$(echo "${functionytemp}*${factor}" | bc)
     functiony=$(printf '%.*f\n' 0 ${functionyfactor})
-
-
-    echo "counter:          ${counter}"
-    echo "functionx:        ${functionx}"
-    echo "functionytemp:    ${functionytemp}"
-    echo "functionyfactor:  ${functionyfactor}"
-    echo "functiony:        ${functiony}"
-    echo "yforfactor:       ${yforfactor}"
-    echo "factor:           ${factor}"
-    echo "==========================="
     echo -e "${counter}\t${functiony}" >> ${outputtext}
     let counter=counter+${steps}
 done
 
+# Generate output image
 gnuplot curve.p
 mv curve.png ${outputimg}
 feh ${outputimg} &
