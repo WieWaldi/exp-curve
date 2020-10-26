@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+#
+# +-------------------------------------------------------------------------+
+# | gencurve                                                                |
+# +-------------------------------------------------------------------------+
+# | Copyright © 2019 Waldemar Schroeer                                      |
+# |                  waldemar.schroeer(at)rz-amper.de                       |
+# +-------------------------------------------------------------------------+
+
+
+# Set some functions
+function getdatetime () {
+    datetime="$(date "+%d.%m.%Y-%H:%M:%S")"
+    printf "${datetime}"
+}
+
+# Set some variables
+outputimg=curve-$(getdatetime).png
+outputtext=output.txt
+
+if [[ -f ${outputtext} ]]; then
+    rm -r ${outputtext}
+fi
+
+# Get some user variables
+echo -e "\n\nPress Enter for default values\n"
+read -p "Temperature Minimum   [20]  :" tempmin
+tempmin=${tempmin:-20}
+read -p "Temperature Maximum   [110] :" tempmax
+tempmax=${tempmax:-110}
+read -p "Basis                 [2]   :" basis
+basis=${basis:-2}
+read -p "Steepness             [0.1] :" steep
+steep=${steep:-0.1}
+read -p "Step every n degree   [10]  :" steps
+steps=${steps:-10}
+read -p "Shift PWM upward      [80]  :" pwmmin
+pwmmin=${pwmmin:-80}
+
+
+echo "==========================="
+echo "tempmin ${tempmin}"
+echo "tempmax ${tempmax}"
+echo "basis ${basis}"
+echo "steep ${steep}"
+echo "steps ${steps}"
+echo "==========================="
+
+
+# Calculate factor
+xforfactor=$(echo "(${tempmax}-${tempmin})*${steep}" | bc -l)
+yforfactor=$(echo "e(l(${basis})*${xforfactor})-1+${pwmmin}" | bc -l)
+factor=$(echo "255/${yforfactor}" | bc -l)
+
+# Let's do some calculations
+counter=${tempmin}
+let counterend=tempmax+1
+while [[ ${counter} -lt ${counterend} ]]; do
+    functionx=$(echo "(${counter}-${tempmin})*${steep}" |bc -l)
+    functionytemp=$(echo "e(l(${basis})*${functionx})-1+${pwmmin}" | bc -l)
+    functionyfactor=$(echo "${functionytemp}*${factor}" | bc)
+    functiony=$(printf '%.*f\n' 0 ${functionyfactor})
+
+
+    echo "counter:          ${counter}"
+    echo "functionx:        ${functionx}"
+    echo "functionytemp:    ${functionytemp}"
+    echo "functionyfactor:  ${functionyfactor}"
+    echo "functiony:        ${functiony}"
+    echo "yforfactor:       ${yforfactor}"
+    echo "factor:           ${factor}"
+    echo "==========================="
+    echo -e "${counter}\t${functiony}" >> ${outputtext}
+    let counter=counter+${steps}
+done
+
+gnuplot curve.p
+mv curve.png ${outputimg}
+feh ${outputimg} &
+
+exit 0 
